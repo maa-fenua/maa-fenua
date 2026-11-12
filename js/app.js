@@ -272,9 +272,9 @@ function render() {
   const waiting = pendMine + waitUsers;
   document.title = (waiting ? "(" + waiting + ") " : "") + APP.name;
   const tabs = {
-    buy: [["produits", "Produits"], ["carte", "Carte"], ["demandes", "Mes demandes", live], ["compte", logged ? "Compte" : "Agriculteur"]],
+    buy: [["produits", "Produits"], ["carte", "Carte"], ["demandes", "Mes demandes", live], ["compte", logged ? "Compte" : "Vendre"]],
     sell: [["mesproduits", "Mes produits"], ["recues", "Demandes", pendMine], ["points", "Points de retrait"]],
-    admin: [["resume", "Résumé"], ["agriculteurs", "Agriculteurs", waitUsers], ["commandes", "Demandes"]]
+    admin: [["resume", "Résumé"], ["agriculteurs", "Comptes", waitUsers], ["commandes", "Demandes"]]
   }[state.mode];
   const cur = state.tab[state.mode];
   $("#tabs").innerHTML = tabs.map(t => '<button data-action="tab" data-v="' + t[0] + '" aria-current="' + (t[0] === cur) + '">' + t[1] + (t[2] ? '<span class="badge">' + t[2] + "</span>" : "") + "</button>").join("");
@@ -282,7 +282,9 @@ function render() {
   let html = (state.online ? "" : '<p class="warn"><strong>Pas de réseau.</strong> Ce que vous faites est gardé dans le téléphone et sera envoyé quand le réseau reviendra.</p>') + (store.mode === "local" ? '<p class="note"><strong>Mode démo.</strong> Les données sont des exemples et restent dans ce téléphone. Remplissez js/config.js pour brancher Firebase.</p>' : "");
   html += state.mode === "sell" ? sellGate(views[cur]) : views[cur]();
   $("#main").innerHTML = html;
-  $("#sheet").innerHTML = state.detail ? vDetail() : state.sent ? vSent() : "";
+  $("#sheet").innerHTML = state.detail ? vDetail() : state.sent ? vSent() : state.help ? vHelp() : "";
+  if (!state.tuto && state.mode === "sell" && isFarmerOk() && !seenFlag("maa-tuto-farmer")) state.tuto = { kind: "farmer", i: 0 };
+  $("#tuto").innerHTML = state.tuto ? vTuto() : "";
   document.querySelectorAll("#langbtn [data-l]").forEach(s => s.classList.toggle("on", s.dataset.l === getLang()));
   translateDom($("#app"));
   mountMaps();
@@ -307,7 +309,7 @@ function vProduits() {
   list = list.sort((a, b) => (b.stock > 0) - (a.stock > 0) || (state.pos ? km(state.pos, a) - km(state.pos, b) : ts(b.createdAt) - ts(a.createdAt)));
   const nf = new Set(state.catalogue.map(p => p.farmerId)).size;
   const hero = '<div class="hero"><div class="txt"><p class="hi">Ia ora na !</p><p>Fruits, légumes et plantes de ' + esc(APP.islands.join(" et ")) + ", en direct des fa'a'apu. Retrait sur place, paiement en espèces.</p>" +
-    (state.catalogue.length ? '<div class="stats"><span>' + state.catalogue.length + " produit" + (state.catalogue.length > 1 ? "s" : "") + "</span><span>" + nf + " agriculteur" + (nf > 1 ? "s" : "") + "</span></div>" : "") + "</div></div>";
+    (state.catalogue.length ? '<div class="stats"><span>' + state.catalogue.length + " produit" + (state.catalogue.length > 1 ? "s" : "") + "</span><span>" + nf + " fa'a'apu</span></div>" : "") + "</div></div>";
   return hero + seasonRow() +
     '<label class="field">Rechercher<input id="q" type="search" placeholder="Taro, ananas, vanille" value="' + esc(state.q) + '" data-keep="q" data-live="1"></label>' +
     '<div class="chips" role="group" aria-label="Île">' + isl.map(i => '<button class="chip" data-action="island" data-v="' + esc(i) + '" aria-pressed="' + (i === state.island) + '">' + esc(i) + "</button>").join("") + "</div>" +
@@ -458,7 +460,7 @@ function vCompte() {
       '<div class="row"><button class="btn small" data-action="mode" data-v="sell">Aller à l\'espace Vendre</button><button class="btn ghost small" data-action="signout">Se déconnecter</button></div></div>' + demoTools();
   }
   const login = state.authTab === "login";
-  let h = "<h2>Espace agriculteur</h2>" + '<p class="muted">Pour acheter, aucun compte n\'est nécessaire. Cet espace sert aux agriculteurs qui vendent leurs produits.</p>' +
+  let h = "<h2>Espace agriculteurs et agricultrices</h2>" + '<p class="muted">Pour acheter, aucun compte n\'est nécessaire. Cet espace sert aux agriculteurs et agricultrices qui vendent leurs produits.</p>' +
     '<div class="roles light" role="group" aria-label="Connexion ou inscription"><button data-action="authtab" data-v="login" aria-pressed="' + login + '">J\'ai un compte</button><button data-action="authtab" data-v="signup" aria-pressed="' + !login + '">Je m\'inscris</button></div>';
   if (login) {
     h += '<form class="card" id="loginform"><label class="field">Numéro de téléphone (ou e-mail si vous en avez donné un)<input id="l-login" autocomplete="username" required data-keep="authf.login" value="' + esc(f.login) + '" placeholder="87 12 34 56"></label>' +
@@ -486,7 +488,7 @@ function demoTools() {
 /* ── Agriculteur ── */
 function sellGate(view) {
   const s = state.session, p = profile();
-  if (!s || s.anon) return '<p class="empty">Connectez-vous dans l\'onglet Agriculteur.</p>';
+  if (!s || s.anon) return '<p class="empty">Connectez-vous dans l\'onglet Vendre.</p>';
   if (!p) {
     const f = state.authf;
     return "<h2>Compléter mon profil</h2>" + '<form class="card" id="profileform"><label class="field">Prénom et nom<input id="s-name" required data-keep="authf.name" value="' + esc(f.name) + '"></label>' +
@@ -554,7 +556,7 @@ function vAgriculteurs() {
   const wait = newest(state.users.filter(u => u.status === "pending")), rest = state.users.filter(u => u.status !== "pending").sort((a, b) => String(a.name).localeCompare(String(b.name)));
   const twin = u => state.users.find(x => x.id !== u.id && x.status !== "pending" && digits(x.phone) === digits(u.phone));
   const me = state.session.uid;
-  return "<h2>Agriculteurs</h2><h3>Inscriptions à valider</h3>" + (wait.length ? '<div class="list">' + wait.map(u => {
+  return "<h2>Agriculteurs et agricultrices</h2><h3>Inscriptions à valider</h3>" + (wait.length ? '<div class="list">' + wait.map(u => {
     const t = twin(u);
     return '<div class="item"><div class="pname">' + esc(u.name) + '</div><div class="muted">' + esc(u.commune) + ", " + esc(u.island) + ' · <a href="tel:' + esc(digits(u.phone)) + '">' + esc(prettyPhone(u.phone)) + "</a></div>" +
       (t ? '<p class="warn">Même numéro que ' + esc(t.name) + ". Si c'est bien la même personne (mot de passe oublié), validez : ses produits seront rattachés au nouveau compte.</p>" : "") +
@@ -571,6 +573,69 @@ function vCommandes() {
   return "<h2>Toutes les demandes</h2>" + blockList(state.allBlocks, "all") + (all.length ? '<div class="list">' + all.map(o => orderItem(o, "admin")).join("") + "</div>" : '<p class="empty">Aucune demande pour le moment.</p>');
 }
 
+/* ───────── Tutoriels ───────── */
+const seenFlag = k => { try { return localStorage.getItem(k) === "1"; } catch (e) { return true; } };
+const setFlag = k => { try { localStorage.setItem(k, "1"); } catch (e) {} };
+const ICON = {
+  basket: '<path d="M14 30h44l-5 22H19z"/><path d="M10 30h52M24 30l8-14M48 30l-8-14M28 38v8M36 38v8M44 38v8"/>',
+  pin: '<path d="M36 58S18 40 18 28a18 18 0 0 1 36 0c0 12-18 30-18 30z"/><circle cx="36" cy="28" r="6"/>',
+  cash: '<rect x="12" y="22" width="48" height="28" rx="4"/><circle cx="36" cy="36" r="7"/><path d="M20 30v12M52 30v12"/>',
+  help: '<circle cx="36" cy="36" r="22"/><path d="M29 30a7 7 0 1 1 10 6c-2 1-3 3-3 5v2"/><circle cx="36" cy="49" r="1.5"/>',
+  check: '<circle cx="36" cy="36" r="22"/><path d="M26 36l7 7 14-15"/>',
+  phone: '<rect x="24" y="12" width="24" height="48" rx="5"/><path d="M33 54h6"/><path d="M30 26l6 6 8-10"/>',
+  bell: '<path d="M22 46h28l-4-6V31a10 10 0 0 0-20 0v9z"/><path d="M32 50a4 4 0 0 0 8 0"/><path d="M14 26c1-6 4-10 8-13M58 26c-1-6-4-10-8-13"/>'
+};
+const TUTO = {
+  app: [
+    { photo: "papaye", t: "Ia ora na !", d: "Mā'a Fenua relie les agriculteurs et agricultrices de Taha'a et Raiatea à celles et ceux qui veulent acheter leurs produits.", lang: true },
+    { photo: "ananas", t: "Trouvez vos produits", d: "Fruits, légumes, vanille et plantes. Filtrez par île ou touchez une vignette de saison." },
+    { icon: "basket", t: "Demandez la quantité", d: "Choisissez des kg, des pièces ou des paquets, puis donnez votre prénom et votre numéro. Aucun compte à créer." },
+    { icon: "pin", t: "Venez chercher, payez sur place", d: "Le fa'a'apu confirme le jour et l'heure. Vous payez en espèces au point de retrait." },
+    { icon: "help", t: "Vous vendez vos produits ?", d: "Touchez l'onglet Vendre pour vous inscrire. Le bouton ? en haut répond à vos questions." }
+  ],
+  farmer: [
+    { icon: "check", t: "Bienvenue dans votre espace", d: "Votre compte est validé : vous pouvez vendre. Voici l'essentiel en 4 étapes." },
+    { icon: "pin", t: "1. Placez votre point de retrait", d: "Onglet Points de retrait : touchez la carte là où les acheteurs viennent, ou utilisez le GPS." },
+    { photo: "patate", t: "2. Publiez vos produits", d: "Ajouter un produit : nom, prix, unité (kg, pièce, pot…), quantité et jusqu'à 3 photos." },
+    { icon: "phone", t: "3. Répondez aux demandes", d: "Pour un nouveau numéro, appelez d'abord. Acceptez, choisissez le jour et l'heure, puis prévenez par WhatsApp." },
+    { icon: "bell", t: "4. Après le retrait", d: "Touchez Remise et payée, ou Pas venu. Activez les alertes pour ne rater aucune demande." }
+  ]
+};
+function vTuto() {
+  const T = TUTO[state.tuto.kind], i = Math.min(state.tuto.i, T.length - 1), s = T[i], last = i === T.length - 1;
+  const art = s.photo ? '<img class="tuto-photo" alt="" src="icons/photos/' + s.photo + '.jpg">'
+    : '<svg class="tuto-icon" viewBox="0 0 72 72" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' + ICON[s.icon] + "</g></svg>";
+  return '<div class="tuto" role="dialog" aria-modal="true" aria-label="Présentation"><div class="tuto-top"><span class="tuto-count">' + (i + 1) + " / " + T.length + '</span><button class="tuto-skip" data-action="tutoskip">Passer</button></div>' +
+    '<div class="tuto-body">' + art + "<h2>" + esc(s.t) + "</h2><p>" + esc(s.d) + "</p>" +
+    (s.lang ? '<div class="tuto-lang"><span>Choisissez votre langue</span><div class="roles light" role="group" aria-label="Langue"><button data-action="tutolang" data-v="fr" aria-pressed="' + (getLang() === "fr") + '">Français</button><button data-action="tutolang" data-v="tah" aria-pressed="' + (getLang() === "tah") + '">Reo tahiti</button></div></div>' : "") +
+    '</div><div class="tuto-dots">' + T.map((x, k) => '<span class="' + (k === i ? "on" : "") + '"></span>').join("") + "</div>" +
+    '<div class="tuto-nav">' + (i > 0 ? '<button class="btn ghost" data-action="tutoprev">Précédent</button>' : "<span></span>") +
+    '<button class="btn" data-action="tutonext">' + (last ? (state.tuto.kind === "farmer" ? "Commencer à vendre" : "C'est parti !") : "Suivant") + "</button></div></div>";
+}
+function closeTuto() { setFlag(state.tuto.kind === "farmer" ? "maa-tuto-farmer" : "maa-tuto"); state.tuto = null; }
+
+/* ───────── Aide ───────── */
+const FAQ = [
+  ["Faut-il payer pour utiliser l'application ?", "Non. Elle est gratuite pour tout le monde. Les produits se paient en espèces au moment du retrait."],
+  ["Comment acheter ?", "Choisissez un produit, la quantité, puis donnez votre prénom et votre numéro. Le fa'a'apu vous confirme le jour et l'heure du retrait."],
+  ["« Le numéro doit avoir 8 chiffres »", "Tapez le numéro sans indicatif, par exemple 87 12 34 56."],
+  ["« La demande n'a pas pu être envoyée »", "Vous avez peut-être déjà 3 demandes en attente : attendez une réponse ou annulez-en une. Sinon, appelez directement le fa'a'apu."],
+  ["Je ne vois plus mes demandes.", "Elles sont liées à ce téléphone et à ce navigateur. Si vous en changez, elles disparaissent de votre côté."],
+  ["Comment vendre mes produits ?", "Onglet Vendre, puis Je m'inscris. L'admin valide votre inscription, ensuite vous pouvez publier."],
+  ["J'ai oublié mon mot de passe.", "Avec un e-mail : « Recevoir un lien par e-mail » sur l'écran de connexion. Sans e-mail : contactez l'admin."],
+  ["Je ne reçois pas d'alerte.", "Touchez « Activer les alertes » et acceptez les notifications. Elles arrivent quand l'application est ouverte ou en arrière-plan."]
+];
+function vHelp() {
+  const c = digits(APP.contact || ""), logged = state.session && !state.session.anon;
+  return '<div class="sheet"><div class="top"><button data-action="closehelp">Fermer</button><strong>Aide</strong></div><div class="body"><div class="pad" style="padding-top:16px">' +
+    "<h2>Comment pouvons-nous vous aider ?</h2>" +
+    '<div class="row"><button class="btn small" data-action="tutoshow" data-v="app">Revoir la présentation</button>' + (logged ? '<button class="btn ghost small" data-action="tutoshow" data-v="farmer">Tutoriel agriculteurs et agricultrices</button>' : "") + "</div>" +
+    "<h3>Questions fréquentes</h3>" + '<div class="faq">' + FAQ.map(q => "<details><summary>" + esc(q[0]) + "</summary><p>" + esc(q[1]) + "</p></details>").join("") + "</div>" +
+    "<h3>Guides complets</h3>" + '<div class="row"><a class="btn ghost small" target="_blank" rel="noopener" href="docs/Maa-Fenua-guide-utilisation.pdf">Guide d\'utilisation (PDF)</a>' + (isAdmin() ? '<a class="btn ghost small" target="_blank" rel="noopener" href="docs/Maa-Fenua-guide-admin.pdf">Guide de l\'admin (PDF)</a>' : "") + "</div>" +
+    (c.length === 8 ? "<h3>Contacter l'admin</h3>" + row([waBtn(c, "Ia ora na, j'ai une question sur " + APP.name + " :", "Écrire sur WhatsApp", true), '<a class="btn ghost small" href="tel:+689' + c + '">Appeler ' + esc(prettyPhone(c)) + "</a>"]) : "") +
+    "</div></div></div>";
+}
+
 /* ───────── Actions ───────── */
 function locate() {
   return new Promise((res, rej) => {
@@ -581,6 +646,13 @@ function locate() {
 }
 const orderById = id => state.farmOrders.concat(state.allOrders, state.myOrders).find(o => o.id === id);
 const act = {
+  help() { state.help = true; state.detail = null; state.sent = null; },
+  closehelp() { state.help = false; },
+  tutoshow(v) { state.help = false; state.tuto = { kind: v, i: 0 }; },
+  tutonext() { if (state.tuto.i >= TUTO[state.tuto.kind].length - 1) closeTuto(); else state.tuto.i++; },
+  tutoprev() { if (state.tuto.i > 0) state.tuto.i--; },
+  tutoskip() { closeTuto(); },
+  tutolang(v) { setLang(v); },
   lang() { setLang(getLang() === "tah" ? "fr" : "tah"); toast(getLang() === "tah" ? "Reo tahiti (version à faire relire)" : "Français"); },
   mode(v) { state.mode = v; state.detail = null; state.form = null; },
   tab(v) { state.tab[state.mode] = v; state.form = null; state.accepting = null; state.newPoint = null; },
@@ -871,21 +943,22 @@ function backfillPhone(list) {
   list.filter(p => p.farmerPhone !== ph).forEach(p => store.updateProduct(p.id, { farmerPhone: ph }).catch(e => console.error(e)));
 }
 // Animation d'accueil : seulement à la toute première ouverture, et on peut la passer en touchant l'écran.
-function intro() {
+function intro(done) {
   const el = $("#intro");
   let seenIntro = false;
   try { seenIntro = localStorage.getItem("maa-intro") === "1"; localStorage.setItem("maa-intro", "1"); } catch (e) { seenIntro = true; }
-  if (!el || seenIntro || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  if (!el || seenIntro || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) { done(); return; }
   el.querySelector(".intro-title").textContent = APP.name;
   el.hidden = false;
   translateDom(el);
   let gone = false;
-  const close = () => { if (gone) return; gone = true; el.classList.add("out"); setTimeout(() => { el.hidden = true; }, 480); };
+  const close = () => { if (gone) return; gone = true; el.classList.add("out"); setTimeout(() => { el.hidden = true; }, 480); done(); };
   el.addEventListener("click", close);
   setTimeout(close, 3200);
 }
 async function start() {
-  intro();
+  // Après l'animation, la présentation s'affiche une seule fois (on peut la revoir avec le bouton ?).
+  intro(() => { if (!seenFlag("maa-tuto")) { state.tuto = { kind: "app", i: 0 }; render(); } });
   $("#appname").textContent = APP.name;
   document.title = APP.name;
   try {

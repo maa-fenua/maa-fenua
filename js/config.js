@@ -27,5 +27,8 @@ export const APP = {
   islands: ["Taha'a", "Raiatea"],
   // Vue de départ de la carte (entre Taha'a et Raiatea).
   mapCenter: [-16.74, -151.47],
-  mapZoom: 11
+  mapZoom: 11,
+  // Numéro de l'admin (8 chiffres) affiché dans le bouton Aide pour « Contacter l'admin ».
+  // Laissez vide "" pour ne pas l'afficher.
+  contact: ""
 };

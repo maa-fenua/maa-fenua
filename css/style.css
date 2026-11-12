@@ -166,3 +166,29 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;b
 .langbtn{display:flex;border:1.5px solid #3c6c75;background:transparent;border-radius:999px;padding:2px;gap:2px}
 .langbtn span{font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#a9d6d2;padding:3px 8px;border-radius:999px}
 .langbtn span.on{background:#fff;color:var(--ocean)}
+
+/* Bouton Aide */
+.helpbtn{width:30px;height:30px;border-radius:50%;border:1.5px solid #3c6c75;background:transparent;color:#fff;font-weight:700;font-size:15px;line-height:1;padding:0}
+/* Présentation / tutoriels */
+.tuto{position:absolute;inset:0;z-index:1500;background:var(--paper);display:flex;flex-direction:column;padding:16px 20px 22px}
+.tuto-top{display:flex;justify-content:space-between;align-items:center}
+.tuto-count{font-size:13px;font-weight:700;color:var(--muted)}
+.tuto-skip{border:0;background:none;color:var(--lagoon);font-weight:700;font-size:15px;padding:8px}
+.tuto-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;max-width:360px;margin:0 auto}
+.tuto-photo{width:190px;height:190px;object-fit:cover;border-radius:28px;box-shadow:0 10px 28px rgba(12,52,64,.22)}
+.tuto-icon{width:150px;height:150px;padding:30px;border-radius:50%;background:linear-gradient(160deg,var(--lagoon),#0c5f6a);box-shadow:0 10px 28px rgba(12,52,64,.22)}
+.tuto-body h2{font-size:24px}
+.tuto-body p{font-size:16px;color:#2c4b52;line-height:1.5}
+.tuto-lang{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:4px}
+.tuto-lang span{font-size:13px;font-weight:700;color:var(--muted)}
+.tuto-dots{display:flex;justify-content:center;gap:7px;margin:10px 0 16px}
+.tuto-dots span{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.tuto-dots span.on{background:var(--lagoon);width:22px;border-radius:4px}
+.tuto-nav{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tuto-nav .btn{min-width:130px}
+/* FAQ */
+.faq{display:flex;flex-direction:column;gap:8px}
+.faq details{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.faq summary{font-weight:700;cursor:pointer}
+.faq details p{margin-top:6px;color:#2c4b52}
+@media (prefers-reduced-motion:no-preference){.tuto-body{animation:i-up .35s ease-out both}}
