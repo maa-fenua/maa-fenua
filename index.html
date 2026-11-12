@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mā'a Fenua</title>
+<meta name="description" content="Fruits et légumes des agriculteurs de Taha'a et Raiatea, à retirer sur place.">
+<meta name="theme-color" content="#0c3440">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand">
+      <h1><svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="13" fill="#0f8a86"/><path d="M13 21c0-7 1-10 6-13-1 6-2 9-6 13Zm0 0c0-5-1-8-6-10 0 5 2 8 6 10Z" fill="#d9f0ec"/></svg><span id="appname">Mā'a Fenua</span></h1>
+      <span class="demo-tag" id="demotag" hidden>Démo</span>
+    </div>
+    <div class="roles" id="modes" role="group" aria-label="Choisir l'espace" hidden></div>
+  </header>
+  <main id="main"><p class="empty">Chargement…</p></main>
+  <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  <div id="sheet"></div>
+  <div id="toast" role="status" aria-live="polite"></div>
+</div>
+<noscript>Cette application a besoin de JavaScript.</noscript>
+<script src="vendor/leaflet.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

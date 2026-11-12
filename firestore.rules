@@ -1,0 +1,137 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore pour Mā'a Fenua.
+//
+// ATTENTION si vous réutilisez un projet Firebase qui a déjà une autre application :
+// ne remplacez PAS vos règles actuelles. Copiez seulement les fonctions et les blocs
+// « match /mf_... » ci-dessous à l'intérieur de votre bloc
+// « match /databases/{database}/documents { ... } » existant.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function mfProfilePath() { return /databases/$(database)/documents/mf_users/$(request.auth.uid); }
+    function mfHasProfile() { return signedIn() && exists(mfProfilePath()); }
+    function mfIsAdmin() { return mfHasProfile() && get(mfProfilePath()).data.role == 'admin' && get(mfProfilePath()).data.status == 'ok'; }
+    function mfIsActive() { return mfHasProfile() && get(mfProfilePath()).data.status == 'ok'; }
+
+    // Profils des agriculteurs. Un nouvel inscrit est toujours « farmer » et « pending ».
+    match /mf_users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || mfIsAdmin());
+      allow create: if signedIn() && request.auth.uid == uid
+                    && request.resource.data.role == 'farmer'
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.phone.matches('^[0-9]{8}$');
+      allow update: if mfIsAdmin()
+                    || (request.auth.uid == uid
+                        && request.resource.data.role == resource.data.role
+                        && request.resource.data.status == resource.data.status);
+      allow delete: if mfIsAdmin();
+    }
+
+    // Compteur « mot de passe oublié », géré par l'admin.
+    match /mf_resets/{phone} {
+      allow read: if true;
+      allow write: if mfIsAdmin();
+    }
+
+    // Points de retrait : visibles par tous, modifiables par leur agriculteur.
+    match /mf_points/{id} {
+      allow read: if true;
+      allow create: if mfIsActive() && request.resource.data.farmerId == request.auth.uid;
+      allow update, delete: if mfIsAdmin() || (mfIsActive() && resource.data.farmerId == request.auth.uid);
+    }
+
+    // Produits : visibles par tous, modifiables par leur agriculteur (compte validé).
+    match /mf_products/{id} {
+      allow read: if true;
+      allow create: if mfIsActive() && request.resource.data.farmerId == request.auth.uid
+                    && request.resource.data.price > 0 && request.resource.data.stock >= 0;
+      allow update: if mfIsAdmin()
+                    || (mfIsActive() && resource.data.farmerId == request.auth.uid
+                        && request.resource.data.farmerId == request.auth.uid);
+      allow delete: if mfIsAdmin() || (mfIsActive() && resource.data.farmerId == request.auth.uid);
+
+      match /photos/{n} {
+        allow read: if true;
+        allow write: if mfIsAdmin()
+                     || (mfIsActive() && get(/databases/$(database)/documents/mf_products/$(id)).data.farmerId == request.auth.uid);
+      }
+    }
+
+    // Demandes : l'acheteur (connexion anonyme) crée et suit les siennes,
+    // l'agriculteur concerné répond, l'admin voit tout.
+    match /mf_orders/{id} {
+      function lockPath(lid) { return /databases/$(database)/documents/mf_locks/$(lid); }
+      function blockPath(bid) { return /databases/$(database)/documents/mf_blocks/$(bid); }
+      function notBlocked(d) {
+        return !exists(blockPath(d.farmerId + '_' + d.buyerPhone))
+            && !exists(blockPath(d.farmerId + '_u-' + request.auth.uid))
+            && !exists(blockPath('all_' + d.buyerPhone))
+            && !exists(blockPath('all_u-' + request.auth.uid));
+      }
+      allow create: if signedIn()
+                    && request.resource.data.buyerUid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.qty > 0
+                    && request.resource.data.buyerPhone is string
+                    && request.resource.data.buyerPhone.matches('^[0-9]{8}$')
+                    && request.resource.data.lockId is string
+                    && existsAfter(lockPath(request.resource.data.lockId))
+                    && getAfter(lockPath(request.resource.data.lockId)).data.orderId == id
+                    && getAfter(lockPath(request.resource.data.lockId)).data.buyerUid == request.auth.uid
+                    && notBlocked(request.resource.data);
+      allow read: if signedIn() && (resource.data.buyerUid == request.auth.uid
+                                    || resource.data.farmerId == request.auth.uid
+                                    || mfIsAdmin());
+      allow update: if mfIsAdmin()
+                    || (signedIn() && resource.data.farmerId == request.auth.uid
+                        && request.resource.data.status in ['pending', 'accepted', 'refused', 'done', 'noshow']
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'slot']))
+                    || (signedIn() && resource.data.buyerUid == request.auth.uid
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status == 'cancelled'
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']));
+    }
+
+    // Places de demandes en attente : 3 au maximum par acheteur (uid_1, uid_2, uid_3).
+    // Une place n'est libérée que quand sa demande n'est plus « en attente ».
+    match /mf_locks/{lid} {
+      function orderPath(oid) { return /databases/$(database)/documents/mf_orders/$(oid); }
+      allow read: if signedIn() && resource.data.buyerUid == request.auth.uid;
+      allow create: if signedIn()
+                    && request.resource.data.buyerUid == request.auth.uid
+                    && request.resource.data.n in [1, 2, 3]
+                    && lid == request.auth.uid + '_' + string(request.resource.data.n)
+                    && getAfter(orderPath(request.resource.data.orderId)).data.lockId == lid;
+      allow delete: if signedIn() && (resource == null
+                    || !existsAfter(orderPath(resource.data.orderId))
+                    || getAfter(orderPath(resource.data.orderId)).data.status != 'pending');
+    }
+
+    // Historique d'un numéro d'acheteur (retraits, absences, numéro vérifié), visible des agriculteurs.
+    // Chaque écriture ne peut ajouter que 1. « verified » ne peut être retiré que par l'admin.
+    match /mf_buyerstats/{phone} {
+      function step(f) {
+        return request.resource.data.get(f, 0) is int
+            && (request.resource.data.get(f, 0) - (resource == null ? 0 : resource.data.get(f, 0))) in [0, 1];
+      }
+      allow read: if mfIsActive();
+      allow create, update: if mfIsActive()
+                    && request.resource.data.keys().hasOnly(['done', 'noshow', 'verified'])
+                    && step('done') && step('noshow')
+                    && request.resource.data.get('verified', false) is bool
+                    && (mfIsAdmin() || request.resource.data.get('verified', false) == true
+                        || resource == null || resource.data.get('verified', false) == false);
+    }
+
+    // Acheteurs bloqués. scope = uid de l'agriculteur, ou « all » pour un blocage par l'admin.
+    match /mf_blocks/{bid} {
+      allow read: if mfIsAdmin() || (mfIsActive() && resource.data.scope == request.auth.uid);
+      allow create: if bid == request.resource.data.scope + '_' + request.resource.data.key
+                    && (mfIsAdmin() || (mfIsActive() && request.resource.data.scope == request.auth.uid));
+      allow delete: if mfIsAdmin() || (mfIsActive() && (resource == null || resource.data.scope == request.auth.uid));
+    }
+  }
+}

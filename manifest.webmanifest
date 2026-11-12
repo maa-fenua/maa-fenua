@@ -1,0 +1,17 @@
+{
+  "name": "Mā'a Fenua",
+  "short_name": "Mā'a Fenua",
+  "description": "Fruits et légumes des agriculteurs de Taha'a et Raiatea, à retirer sur place.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c3440",
+  "theme_color": "#0c3440",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
