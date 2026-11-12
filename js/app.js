@@ -812,7 +812,21 @@ function backfillPhone(list) {
   backfilled = true;
   list.filter(p => p.farmerPhone !== ph).forEach(p => store.updateProduct(p.id, { farmerPhone: ph }).catch(e => console.error(e)));
 }
+// Animation d'accueil : seulement à la toute première ouverture, et on peut la passer en touchant l'écran.
+function intro() {
+  const el = $("#intro");
+  let seenIntro = false;
+  try { seenIntro = localStorage.getItem("maa-intro") === "1"; localStorage.setItem("maa-intro", "1"); } catch (e) { seenIntro = true; }
+  if (!el || seenIntro || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
+  el.querySelector(".intro-title").textContent = APP.name;
+  el.hidden = false;
+  let gone = false;
+  const close = () => { if (gone) return; gone = true; el.classList.add("out"); setTimeout(() => { el.hidden = true; }, 480); };
+  el.addEventListener("click", close);
+  setTimeout(close, 3200);
+}
 async function start() {
+  intro();
   $("#appname").textContent = APP.name;
   document.title = APP.name;
   try {
