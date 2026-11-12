@@ -1,6 +1,6 @@
 // Mode démo : mêmes fonctions que store-firebase.js, mais les données restent
 // dans le navigateur (localStorage). Utilisé tant que js/config.js n'est pas rempli.
-const K = "maa-fenua-demo-v2", KS = "maa-fenua-demo-session";
+const K = "maa-fenua-demo-v3", KS = "maa-fenua-demo-session";
 const now = Date.now();
 
 function seed() {
@@ -34,7 +34,9 @@ function seed() {
     ["a9", "f5", "p5", "Papaye", "Fruits", "piece", 400, 22, ""],
     ["a10", "f2", "p2", "'Uru", "Légumes", "piece", 300, 15, ""],
     ["a11", "f3", "p6", "Pota", "Légumes", "paquet", 300, 20, ""],
-    ["a12", "f5", "p5", "Gingembre", "Vanille et épices", "kg", 1200, 8, ""]
+    ["a12", "f5", "p5", "Gingembre", "Vanille et épices", "kg", 1200, 8, ""],
+    ["a13", "f1", "p1", "Plant de tiare", "Plantes", "pot", 800, 14, "Pot de 2 litres"],
+    ["a14", "f4", "p4", "Boutures de monstera", "Plantes", "plant", 500, 10, ""]
   ];
   const products = raw.map((r, i) => {
     const pt = points.find(p => p.id === r[2]), f = users[r[1]];
@@ -123,6 +125,7 @@ export async function createStore() {
     },
     async signOut() { session = null; emit(); },
     async resetPassword() { /* démo : aucun e-mail n'est envoyé */ },
+    async setUserRole(uid, role) { db.users[uid].role = role; emit(); },
     async allowReset(phone) { db.resetOk = db.resetOk || {}; db.resetOk[phone] = true; emit(); },
     async replaceAccount(oldUid, newUid, role) {
       for (const n of ["products", "points", "orders"]) db[n].forEach(x => { if (x.farmerId === oldUid) x.farmerId = newUid; });

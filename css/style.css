@@ -31,7 +31,7 @@ header{background:var(--ocean);color:#fff;padding:12px 16px 10px;display:flex;fl
 .roles.light{background:var(--lagoon-soft)}
 .roles.light button{color:var(--muted)}
 .roles.light button[aria-pressed="true"]{background:var(--lagoon);color:#fff}
-main{flex:1;overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px}
+main{flex:1;overflow-y:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;background-color:var(--paper);background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22240%22 height=%22240%22 viewBox=%220 0 240 240%22%3E%3Cg fill=%22none%22 stroke=%22%230f8a86%22 stroke-width=%221.6%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22 opacity=%22.11%22%3E%0A%3Cg transform=%22translate%2840 42%29%22%3E%3Cellipse cx=%220%22 cy=%22-11%22 rx=%225%22 ry=%2210%22/%3E%3Cellipse cx=%220%22 cy=%22-11%22 rx=%225%22 ry=%2210%22 transform=%22rotate%2872%29%22/%3E%3Cellipse cx=%220%22 cy=%22-11%22 rx=%225%22 ry=%2210%22 transform=%22rotate%28144%29%22/%3E%3Cellipse cx=%220%22 cy=%22-11%22 rx=%225%22 ry=%2210%22 transform=%22rotate%28216%29%22/%3E%3Cellipse cx=%220%22 cy=%22-11%22 rx=%225%22 ry=%2210%22 transform=%22rotate%28288%29%22/%3E%3Ccircle r=%223%22/%3E%3C/g%3E%0A%3Cg transform=%22translate%28170 58%29 rotate%28-20%29%22%3E%3Cpath d=%22M0 36C-26 30-34 6-22-14-10-30 10-30 22-14 34 6 26 30 0 36Z%22/%3E%3Cpath d=%22M0 36V-18%22/%3E%3Cpath d=%22M-6 6l-16-6M-4 18l-14 2M6 6l16-6M4 18l14 2M-2-6l-12-10M2-6l12-10%22/%3E%3Ccircle cx=%22-11%22 cy=%22-2%22 r=%222.5%22/%3E%3Ccircle cx=%2211%22 cy=%2210%22 r=%222.5%22/%3E%3C/g%3E%0A%3Cg transform=%22translate%2872 168%29 rotate%2825%29%22%3E%3Cpath d=%22M0 34V-34%22/%3E%3Cpath d=%22M0-30c-10 4-16 10-16 18 6-2 12-2 16 2M0-30c10 4 16 10 16 18-6-2-12-2-16 2M0-8c-12 4-20 12-20 22 8-3 14-3 20 2M0-8c12 4 20 12 20 22-8-3-14-3-20 2M0 14c-10 4-14 10-14 16 5-2 10-2 14 1M0 14c10 4 14 10 14 16-5-2-10-2-14 1%22/%3E%3C/g%3E%0A%3Cg transform=%22translate%28186 180%29%22%3E%3Cellipse cx=%220%22 cy=%228%22 rx=%2213%22 ry=%2217%22/%3E%3Cpath d=%22M-9 0l18 16M-9 14l14 10M-4-6l13 12M9 0L-9 16M9 14L-5 24M4-6L-9 6%22/%3E%3Cpath d=%22M0-9l-6-14M0-9l6-14M0-9V-26M0-9l-11-9M0-9l11-9%22/%3E%3C/g%3E%0A%3Cpath d=%22M14 120c8-6 16-6 24 0s16 6 24 0M120 128c8-6 16-6 24 0s16 6 24 0M110 18c6-4 12-4 18 0s12 4 18 0%22/%3E%0A%3Ccircle cx=%22120%22 cy=%2296%22 r=%222%22/%3E%3Ccircle cx=%22226%22 cy=%22122%22 r=%222%22/%3E%3Ccircle cx=%2218%22 cy=%22222%22 r=%222%22/%3E%3Ccircle cx=%22132%22 cy=%22226%22 r=%222%22/%3E%3C/g%3E%3C/svg%3E");background-size:240px 240px}
 main>*,.sheet .body>*,.sheet .pad>*{flex-shrink:0}
 nav.tabs{display:flex;background:var(--card);border-top:1px solid var(--line)}
 nav.tabs button{flex:1;border:0;background:none;padding:11px 2px 12px;font-weight:600;font-size:12.5px;color:var(--muted);border-top:3px solid transparent}
@@ -133,3 +133,30 @@ button.thumb[aria-pressed="true"]{border-color:var(--lagoon)}
 @keyframes i-drift{from{transform:translateX(-6px)}to{transform:translateX(6px)}}
 @keyframes i-up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes i-fade{from{opacity:0}to{opacity:1}}
+
+/* Bande tapa sous l'en-tête */
+header{position:relative;padding-bottom:22px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;background-image:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2236%22 height=%2212%22 viewBox=%220 0 36 12%22%3E%3Crect width=%2236%22 height=%2212%22 fill=%22%230c3440%22/%3E%3Cpath d=%22M0 12L9 2L18 12Z%22 fill=%22%230f8a86%22/%3E%3Cpath d=%22M18 12L27 2L36 12Z%22 fill=%22%23f2b632%22/%3E%3Cpath d=%22M9 12l4.5-4 4.5 4zM27 12l4.5-4 4.5 4z%22 fill=%22%23d9f0ec%22/%3E%3Crect y=%220%22 width=%2236%22 height=%221.5%22 fill=%22%23d9482f%22/%3E%3C/svg%3E");background-size:36px 12px;background-repeat:repeat-x}
+/* Carte d'accueil illustrée */
+.hero{position:relative;overflow:hidden;border-radius:16px;background:linear-gradient(170deg,#0f8a86 0%,#0c6f78 60%,#0c3440 100%);color:#fff;display:flex;flex-direction:column}
+.hero .txt{padding:16px;display:flex;flex-direction:column;gap:6px;z-index:1}
+.hero .hi{font-family:var(--display);font-weight:700;font-size:24px;line-height:1.05;margin:0}
+.hero p{color:#d9f0ec;font-size:13.5px;line-height:1.35}
+.hero svg{display:block;width:100%;height:auto;margin-bottom:-6px}
+.hero .stats{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.hero .stats span{background:rgba(255,255,255,.16);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+/* Pages vides illustrées */
+.emptyart{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--muted);padding:18px 10px;background:rgba(255,255,255,.82);border:1px dashed var(--line);border-radius:14px}
+.emptyart svg{width:150px;height:auto}
+.emptyart strong{color:var(--ocean);font-size:15px}
+.pcard{box-shadow:0 1px 0 rgba(12,52,64,.04),0 4px 14px rgba(12,52,64,.06)}
+.chip{background:rgba(255,255,255,.92)}
+
+/* Vignettes « De saison » (photos des produits du fenua) */
+.season{display:flex;flex-direction:column;gap:8px}
+.season-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;margin:0 -16px;padding-left:16px;padding-right:16px;scroll-snap-type:x proximity;scroll-padding-left:16px;scrollbar-width:none}
+.season-row::-webkit-scrollbar{display:none}
+.stile{flex:0 0 96px;scroll-snap-align:start;position:relative;border:2px solid transparent;border-radius:14px;overflow:hidden;padding:0;background:var(--lagoon-soft);aspect-ratio:1/1.12;box-shadow:0 4px 12px rgba(12,52,64,.12)}
+.stile img{width:100%;height:100%;object-fit:cover;display:block}
+.stile span{position:absolute;left:0;right:0;bottom:0;padding:16px 6px 6px;background:linear-gradient(transparent,rgba(12,52,64,.85));color:#fff;font-weight:700;font-size:12.5px;line-height:1.15;text-align:center;overflow-wrap:anywhere}
+.stile[aria-pressed="true"]{border-color:var(--sun)}

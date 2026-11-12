@@ -73,6 +73,7 @@ export async function createStore() {
     },
     async signIn(idf, password) { return AU.signInWithEmailAndPassword(auth, idf.includes("@") ? idf : await mail(idf), password); },
     resetPassword(email) { return AU.sendPasswordResetEmail(auth, email); },
+    setUserRole(uid, role) { return FS.updateDoc(D("users", uid), { role }); },
     async allowReset(phone) { const n = await resetCount(phone); await FS.setDoc(D("resets", phone), { n: n + 1 }); },
     // L'agriculteur s'est réinscrit après un mot de passe oublié : on rattache ses produits,
     // points de retrait et demandes au nouveau compte, puis on supprime l'ancien profil.

@@ -17,8 +17,8 @@ const state = {
 try { state.buyerName = localStorage.getItem("maa-name") || ""; state.buyerPhone = localStorage.getItem("maa-phone") || ""; } catch (e) {}
 try { state.pos = JSON.parse(sessionStorage.getItem("maa-pos")); } catch (e) {}
 
-const UNITS = { kg: ["kg", "kg"], piece: ["pièce", "pièces"], regime: ["régime", "régimes"], paquet: ["paquet", "paquets"], sac: ["sac", "sacs"] };
-const CATS = ["Fruits", "Légumes", "Vanille et épices"];
+const UNITS = { kg: ["kg", "kg"], piece: ["pièce", "pièces"], regime: ["régime", "régimes"], paquet: ["paquet", "paquets"], sac: ["sac", "sacs"], pot: ["pot", "pots"], plant: ["plant", "plants"] };
+const CATS = ["Fruits", "Légumes", "Vanille et épices", "Plantes"];
 const ST = { pending: "En attente", accepted: "Acceptée", refused: "Refusée", done: "Remise et payée", cancelled: "Annulée", noshow: "Pas venu" };
 const UST = { pending: "À valider", ok: "Actif", suspended: "Suspendu", refused: "Refusé" };
 
@@ -94,14 +94,18 @@ function kindOf(name) {
   const n = String(name || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
   const K = [["ananas", "ananas"], ["pasteque", "pasteque"], ["melon", "pasteque"], ["banan", "banane"], ["fe'i", "banane"], ["fei", "banane"], ["taro", "taro"], ["patate", "taro"], ["igname", "taro"], ["manioc", "taro"],
     ["vanille", "vanille"], ["citron", "citron"], ["lime", "citron"], ["tomate", "tomate"], ["papaye", "papaye"], ["mangue", "papaye"], ["concombre", "concombre"], ["courgette", "concombre"], ["aubergine", "concombre"],
-    ["uru", "uru"], ["pota", "pota"], ["salade", "pota"], ["chou", "pota"], ["laitue", "pota"], ["gingembre", "gingembre"], ["curcuma", "gingembre"]];
+    ["uru", "uru"], ["pota", "pota"], ["salade", "pota"], ["chou", "pota"], ["laitue", "pota"], ["gingembre", "gingembre"], ["curcuma", "gingembre"],
+    ["coco", "coco"], ["corossol", "corossol"], ["tapotapo", "corossol"], ["patate", "patate"], ["umara", "patate"], ["'umara", "patate"], ["pitaya", "pitaya"], ["dragon", "pitaya"], ["ramboutan", "ramboutan"], ["litchi", "ramboutan"], ["passion", "passion"], ["avocat", "avocat"], ["pamplemousse", "agrume"], ["orange", "agrume"], ["mandarine", "agrume"],
+    ["tiare", "plante"], ["plant", "plante"], ["fleur", "plante"], ["bouture", "plante"], ["orchidee", "plante"], ["monstera", "plante"], ["hibiscus", "plante"], ["pot", "plante"], ["arbre", "plante"], ["noni", "plante"], ["miri", "plante"], ["basilic", "plante"]];
   for (const k of K) if (n.includes(k[0])) return k[1];
-  return "autre";
+  return p_cat === "Plantes" ? "plante" : "autre";
 }
+let p_cat = "";
 function art(p, src) {
   if (src || p.thumb) return '<img alt="" loading="lazy" src="' + (src || p.thumb) + '">';
+  p_cat = p.cat || "";
   const kind = kindOf(p.name || p.productName);
-  const bg = { ananas: "#fbe9b0", pasteque: "#d8efd0", banane: "#e3f1c9", taro: "#e6ddd0", vanille: "#f1e3c6", citron: "#e2f3c2", tomate: "#fbdcd2", papaye: "#fde3c0", concombre: "#d6efd9", uru: "#dcefc4", pota: "#d9f0d6", gingembre: "#f3e6cc", autre: "#d9f0ec" }[kind];
+  const bg = { ananas: "#fbe9b0", pasteque: "#d8efd0", banane: "#e3f1c9", taro: "#e6ddd0", vanille: "#f1e3c6", citron: "#e2f3c2", tomate: "#fbdcd2", papaye: "#fde3c0", concombre: "#d6efd9", uru: "#dcefc4", pota: "#d9f0d6", gingembre: "#f3e6cc", plante: "#e4f1df", coco: "#e9dfd0", corossol: "#e2efd2", patate: "#f3e1d8", pitaya: "#fbdfe9", ramboutan: "#fbdcd2", passion: "#f0dfea", avocat: "#e2efd2", agrume: "#fdeec0", autre: "#d9f0ec" }[kind];
   const g = {
     ananas: '<path d="M60 14l6 14 10-10-3 15 13-5-10 13H44L34 28l13 5-3-15 10 10z" fill="#4f9a2e"/><ellipse cx="60" cy="58" rx="19" ry="24" fill="#e9a920"/><path d="M45 46l30 26M45 60l22 20M53 36l23 22M75 46L45 72M75 60L53 80M67 36L44 58" stroke="#b97a0c" stroke-width="1.6"/>',
     pasteque: '<path d="M20 44a40 40 0 0 0 80 0z" fill="#2f7d2a"/><path d="M26 44a34 34 0 0 0 68 0z" fill="#f4f7e4"/><path d="M30 44a30 30 0 0 0 60 0z" fill="#e2433c"/><g fill="#3a1d16"><ellipse cx="46" cy="54" rx="2" ry="3"/><ellipse cx="60" cy="60" rx="2" ry="3"/><ellipse cx="74" cy="54" rx="2" ry="3"/><ellipse cx="60" cy="49" rx="2" ry="3"/></g>',
@@ -115,6 +119,15 @@ function art(p, src) {
     uru: '<path d="M60 12v10" stroke="#5a4326" stroke-width="4"/><circle cx="60" cy="54" r="30" fill="#7fb23a"/><g fill="#5f9226"><circle cx="48" cy="42" r="2.5"/><circle cx="60" cy="38" r="2.5"/><circle cx="72" cy="42" r="2.5"/><circle cx="42" cy="54" r="2.5"/><circle cx="54" cy="50" r="2.5"/><circle cx="66" cy="50" r="2.5"/><circle cx="78" cy="54" r="2.5"/><circle cx="48" cy="64" r="2.5"/><circle cx="60" cy="62" r="2.5"/><circle cx="72" cy="64" r="2.5"/><circle cx="60" cy="74" r="2.5"/></g>',
     pota: '<path d="M60 84c-4-20-22-22-22-44 0-12 8-22 22-26 14 4 22 14 22 26 0 22-18 24-22 44z" fill="#4f9a2e"/><path d="M60 84c-2-18-12-22-12-40 0-10 5-18 12-22 7 4 12 12 12 22 0 18-10 22-12 40z" fill="#8fce5c"/><path d="M60 82V30" stroke="#f1f7e6" stroke-width="5" stroke-linecap="round"/>',
     gingembre: '<g fill="#d9b06b" stroke="#b08845" stroke-width="2"><ellipse cx="50" cy="56" rx="20" ry="12"/><ellipse cx="74" cy="48" rx="14" ry="10"/><ellipse cx="72" cy="68" rx="12" ry="8"/><ellipse cx="36" cy="42" rx="10" ry="7"/></g>',
+    corossol: '<path d="M60 18c18 4 28 20 26 38S72 86 58 84 30 72 32 52s10-38 28-34z" fill="#8cc63f"/><g fill="none" stroke="#5f9226" stroke-width="2.200" stroke-linecap="round"><path d="M46 32c2-2 4-2 5 1M62 28c2-2 4-2 5 1M76 38c2-2 4-1 4 2M40 48c2-2 4-2 5 1M56 44c2-2 4-2 5 1M72 52c2-2 4-1 4 2M44 64c2-2 4-2 5 1M60 62c2-2 4-2 5 1M74 68c2-2 3-1 4 2M52 76c2-2 4-2 5 1"/></g><path d="M58 18c0-6 2-10 6-12" stroke="#5a4326" stroke-width="3" stroke-linecap="round" fill="none"/>',
+    patate: '<g transform="rotate(-22 60 50)"><path d="M24 52c0-12 14-20 36-20s36 8 36 20-14 20-36 20-36-8-36-20z" fill="#c9715a"/><path d="M38 44l2 2M58 40l2 2M76 46l2 2M48 58l2 2M70 60l2 2" stroke="#8a4a3a" stroke-width="2.500" stroke-linecap="round"/><path d="M96 52l10-2" stroke="#8a4a3a" stroke-width="2" stroke-linecap="round"/></g><g transform="rotate(14 60 70)"><path d="M36 74c0-8 10-13 24-13s24 5 24 13-10 13-24 13-24-5-24-13z" fill="#a67c6a"/></g>',
+    coco: '<circle cx="60" cy="52" r="30" fill="#8a6748"/><path d="M38 40c14 8 30 8 44 0M34 54c16 8 36 8 52 0M40 68c12 6 28 6 40 0" stroke="#6d4f36" stroke-width="2.500" fill="none"/><g fill="#4a3320"><circle cx="52" cy="32" r="3"/><circle cx="66" cy="32" r="3"/><circle cx="59" cy="42" r="3"/></g>',
+    pitaya: '<ellipse cx="60" cy="52" rx="24" ry="31" fill="#e2457a"/><g fill="#7fc25a"><path d="M46 30l-9-12 14 5zM66 24l5-14 7 14zM82 44l14-5-9 12zM38 56l-14 2 12 7zM80 68l12 7-14 2z"/></g><path d="M50 42l9 7M66 38l7 9M52 60l9 7M70 58l6 7" stroke="#c22f62" stroke-width="2.500" stroke-linecap="round"/>',
+    ramboutan: '<g fill="#d9372a" stroke="#a8241a" stroke-width="5" stroke-dasharray="2 4"><circle cx="44" cy="54" r="17"/><circle cx="76" cy="46" r="16"/><circle cx="66" cy="70" r="14"/></g>',
+    passion: '<circle cx="44" cy="52" r="21" fill="#7a2f5a"/><circle cx="44" cy="52" r="15" fill="#f4c93a"/><circle cx="78" cy="58" r="19" fill="#7a2f5a"/><circle cx="78" cy="58" r="13" fill="#f4c93a"/><g fill="#3a2418"><circle cx="39" cy="48" r="2.200"/><circle cx="48" cy="47" r="2.200"/><circle cx="44" cy="56" r="2.200"/><circle cx="74" cy="55" r="2"/><circle cx="82" cy="58" r="2"/><circle cx="77" cy="63" r="2"/></g>',
+    avocat: '<path d="M60 16c14 0 24 22 24 40S74 84 60 84 36 74 36 56s10-40 24-40z" fill="#3f6b2a"/><path d="M60 24c10 0 17 18 17 32S70 77 60 77 43 70 43 56s7-32 17-32z" fill="#cfe08a"/><circle cx="60" cy="58" r="11" fill="#8a5a34"/>',
+    agrume: '<circle cx="48" cy="54" r="24" fill="#f4c93a"/><circle cx="40" cy="46" r="6" fill="#fbe08a"/><circle cx="80" cy="60" r="18" fill="#f2a51e"/><path d="M48 30c4-6 10-8 16-6-4 6-10 8-16 6z" fill="#4f9a2e"/>',
+    plante: '<path d="M44 66h32l-4 22H48z" fill="#c8693c"/><path d="M42 62h36v6H42z" fill="#a9532c"/><path d="M60 62V36" stroke="#3f7d22" stroke-width="3"/><path d="M60 50c-14-2-20-10-20-20 12 0 19 8 20 20z" fill="#4f9a2e"/><path d="M60 44c12-2 18-10 18-20-11 0-17 8-18 20z" fill="#6bb43f"/><g transform="translate(60 26)"><circle r="3" fill="#f2b632"/><g fill="#fff" stroke="#e8e1c8" stroke-width=".8"><ellipse cx="0" cy="-7" rx="3.2" ry="6"/><ellipse cx="0" cy="-7" rx="3.2" ry="6" transform="rotate(72)"/><ellipse cx="0" cy="-7" rx="3.2" ry="6" transform="rotate(144)"/><ellipse cx="0" cy="-7" rx="3.2" ry="6" transform="rotate(216)"/><ellipse cx="0" cy="-7" rx="3.2" ry="6" transform="rotate(288)"/></g><circle r="2.4" fill="#f2b632"/></g>',
     autre: '<path d="M60 80c0-26 4-38 24-50-4 22-8 36-24 50zm0 0c0-18-4-30-22-38 0 18 6 30 22 38z" fill="#0f8a86"/>'
   }[kind];
   return '<svg viewBox="0 0 120 96" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="120" height="96" fill="' + bg + '"/>' + g + "</svg>";
@@ -146,6 +159,22 @@ function compress(file) {
     im.src = url;
   });
 }
+
+/* ───────── Illustrations ───────── */
+const BASKET_ART = `<svg viewBox="0 0 150 110" aria-hidden="true"><ellipse cx="75" cy="102" rx="58" ry="6" fill="#0c3440" opacity=".08"/>
+<path d="M24 58h102l-10 42H34z" fill="#d9b07a"/><path d="M20 56h110" stroke="#b5793d" stroke-width="6" stroke-linecap="round"/><path d="M32 72h86M36 86h78" stroke="#b5793d" stroke-width="2" opacity=".6"/>
+<path d="M40 56c0-26 70-26 70 0" fill="none" stroke="#b5793d" stroke-width="4"/>
+<path d="M58 54c-4-14 0-26 10-32 2 12-2 24-10 32z" fill="#7fc25a" opacity=".85"/><path d="M84 54c6-12 16-18 28-16-6 10-16 16-28 16z" fill="#4f9a2e" opacity=".85"/>
+<g transform="translate(75 30)"><g fill="#fff" stroke="#e8e1c8" stroke-width=".8"><ellipse cx="0" cy="-7" rx="3.4" ry="6.4"/><ellipse cx="0" cy="-7" rx="3.4" ry="6.4" transform="rotate(72)"/><ellipse cx="0" cy="-7" rx="3.4" ry="6.4" transform="rotate(144)"/><ellipse cx="0" cy="-7" rx="3.4" ry="6.4" transform="rotate(216)"/><ellipse cx="0" cy="-7" rx="3.4" ry="6.4" transform="rotate(288)"/></g><circle r="2.6" fill="#f2b632"/></g></svg>`;
+// Raccourcis « De saison » avec les photos de Brian : touchez une vignette pour chercher ce produit.
+const SEASON = [["ananas", "Ananas", "ananas"], ["papaye", "Papaye", "papaye"], ["coco", "Coco", "coco"], ["patate", "Patates douces", "patate"], ["corossol", "Corossol", "corossol"], ["plant", "Plants", "@Plantes"]];
+function seasonRow() {
+  return '<div class="season"><h3>De saison au fenua</h3><div class="season-row">' + SEASON.map(s => {
+    const on = s[2][0] === "@" ? state.cat === s[2].slice(1) : state.q.trim().toLowerCase() === s[2];
+    return '<button class="stile" data-action="season" data-v="' + esc(s[2]) + '" aria-pressed="' + on + '"><img alt="" loading="lazy" src="icons/photos/' + s[0] + '.jpg"><span>' + esc(s[1]) + "</span></button>";
+  }).join("") + "</div></div>";
+}
+const emptyArt = (title, text) => '<div class="emptyart">' + BASKET_ART + "<strong>" + esc(title) + "</strong><span>" + esc(text) + "</span></div>";
 
 /* ───────── Cartes (Leaflet + OpenStreetMap) ───────── */
 const maps = {};
@@ -266,13 +295,16 @@ function vProduits() {
   const isl = ["Toutes"].concat(APP.islands), cats = ["Tous"].concat(CATS), q = state.q.trim().toLowerCase();
   let list = state.catalogue.filter(p => (state.island === "Toutes" || p.island === state.island) && (state.cat === "Tous" || p.cat === state.cat) && (!q || String(p.name).toLowerCase().includes(q)));
   list = list.sort((a, b) => (b.stock > 0) - (a.stock > 0) || (state.pos ? km(state.pos, a) - km(state.pos, b) : ts(b.createdAt) - ts(a.createdAt)));
-  return "<h2>Fruits et légumes du fenua</h2>" +
+  const nf = new Set(state.catalogue.map(p => p.farmerId)).size;
+  const hero = '<div class="hero"><div class="txt"><p class="hi">Ia ora na !</p><p>Fruits, légumes et plantes de ' + esc(APP.islands.join(" et ")) + ", en direct des fa'a'apu. Retrait sur place, paiement en espèces.</p>" +
+    (state.catalogue.length ? '<div class="stats"><span>' + state.catalogue.length + " produit" + (state.catalogue.length > 1 ? "s" : "") + "</span><span>" + nf + " agriculteur" + (nf > 1 ? "s" : "") + "</span></div>" : "") + "</div></div>";
+  return hero + seasonRow() +
     '<label class="field">Rechercher<input id="q" type="search" placeholder="Taro, ananas, vanille" value="' + esc(state.q) + '" data-keep="q" data-live="1"></label>' +
     '<div class="chips" role="group" aria-label="Île">' + isl.map(i => '<button class="chip" data-action="island" data-v="' + esc(i) + '" aria-pressed="' + (i === state.island) + '">' + esc(i) + "</button>").join("") + "</div>" +
     '<div class="chips" role="group" aria-label="Catégorie">' + cats.map(c => '<button class="chip" data-action="cat" data-v="' + esc(c) + '" aria-pressed="' + (c === state.cat) + '">' + esc(c) + "</button>").join("") + "</div>" +
     locateBar() +
     (list.length ? '<div class="products">' + list.map(productCard).join("") + "</div>"
-      : '<p class="empty">' + (state.catalogue.length ? "Aucun produit ne correspond. Essayez une autre île ou catégorie." : "Aucun produit en vente pour le moment. Revenez bientôt.") + "</p>");
+      : (state.catalogue.length ? emptyArt("Rien ne correspond", "Essayez une autre île, une autre catégorie ou un autre mot.") : emptyArt("Le marché ouvre bientôt", "Les agriculteurs de " + APP.islands.join(" et ") + " ajoutent leurs produits. Revenez dans quelques jours.")));
 }
 function vDetail() {
   const p = allProducts().get(state.detail);
@@ -400,7 +432,7 @@ function vDemandes() {
   const pend = mine.filter(o => o.status === "pending").length;
   return "<h2>Mes demandes</h2>" + (mine.some(o => o.status === "pending" || o.status === "accepted") ? alertCard("réponse de l'agriculteur") : "") +
     (pend >= 3 ? '<p class="note">Vous avez 3 demandes en attente, le maximum. Attendez une réponse ou annulez-en une pour en envoyer une autre.</p>' : "") + (mine.length ? '<div class="list">' + mine.map(o => orderItem(o, "buyer")).join("") + "</div>"
-    : '<p class="empty">Vous n\'avez pas encore envoyé de demande. Choisissez un produit dans l\'onglet Produits.</p>') +
+    : emptyArt("Pas encore de demande", "Choisissez un produit dans l'onglet Produits, puis la quantité voulue.")) +
     '<p class="muted">Vos demandes sont liées à ce téléphone. Gardez la même application pour les suivre.</p>';
 }
 
@@ -480,13 +512,13 @@ function vMesProduits() {
   h += '<div class="list">' + mine.map(p => '<div class="item"><div class="row"><span class="thumb pic">' + art(p) + '</span><div><div class="pname">' + esc(p.name) + '</div><div class="muted">' + money(p.price) + " / " + unitName(p.unit) + " · " + esc(p.pointName) + "</div></div></div>" +
     '<div class="row between"><span>Stock : <strong>' + qtyLabel(p.stock, p.unit) + '</strong></span><div class="row"><button class="btn ghost small" data-action="stock" data-id="' + esc(p.id) + '" data-d="-1" aria-label="Diminuer le stock">−</button><button class="btn ghost small" data-action="stock" data-id="' + esc(p.id) + '" data-d="1" aria-label="Augmenter le stock">+</button></div></div>' +
     '<div class="row"><button class="btn ghost small" data-action="edit" data-id="' + esc(p.id) + '">Modifier</button><button class="btn danger small" data-action="del" data-id="' + esc(p.id) + '"' + busyAttr() + ">Retirer de la vente</button></div></div>").join("") + "</div>";
-  if (!mine.length && !state.form) h += '<p class="empty">Aucun produit en vente pour le moment.</p>';
+  if (!mine.length && !state.form) h += emptyArt("Votre étal est vide", pts.length ? "Touchez « Ajouter un produit » pour mettre en vente vos fruits, légumes ou plantes." : "Commencez par placer un point de retrait, puis ajoutez vos produits.");
   return h;
 }
 function vRecues() {
   const mine = newest(state.farmOrders);
   needStats(mine.filter(o => o.status === "pending" || o.status === "accepted").map(o => digits(o.buyerPhone)));
-  return "<h2>Demandes reçues</h2>" + alertCard("nouvelle demande") + (mine.length ? '<div class="list">' + mine.map(o => orderItem(o, "farmer")).join("") + "</div>" : '<p class="empty">Aucune demande pour le moment.</p>') + blockList(state.blocks, state.session.uid);
+  return "<h2>Demandes reçues</h2>" + alertCard("nouvelle demande") + (mine.length ? '<div class="list">' + mine.map(o => orderItem(o, "farmer")).join("") + "</div>" : emptyArt("Aucune demande pour le moment", "Les demandes des acheteurs apparaîtront ici.")) + blockList(state.blocks, state.session.uid);
 }
 function vPoints() {
   const pts = myPoints();
@@ -519,7 +551,10 @@ function vAgriculteurs() {
       '<div class="row"><button class="btn small" data-action="approve" data-id="' + esc(u.id) + '"' + busyAttr() + ">" + (t ? "Valider et remplacer l'ancien compte" : "Valider") + '</button><button class="btn danger small" data-action="reject" data-id="' + esc(u.id) + '"' + busyAttr() + ">Refuser</button></div></div>";
   }).join("") + "</div>" : '<p class="muted">Aucune inscription en attente.</p>') +
     "<h3>Inscrits</h3>" + '<div class="list">' + rest.map(u => '<div class="item"><div class="row between"><div><div class="pname">' + esc(u.name) + (u.role === "admin" ? " (admin)" : "") + '</div><div class="muted">' + esc(u.commune) + ", " + esc(u.island) + ' · <a href="tel:' + esc(digits(u.phone)) + '">' + esc(prettyPhone(u.phone)) + "</a> · " + state.catalogue.filter(p => p.farmerId === u.id).length + ' produit(s)</div></div><span class="status st-' + esc(u.status) + '">' + (UST[u.status] || esc(u.status)) + "</span></div>" +
-      (u.id === me ? "" : '<div class="row"><button class="btn ghost small" data-action="suspend" data-id="' + esc(u.id) + '"' + busyAttr() + ">" + (u.status === "ok" ? "Suspendre" : "Réactiver") + '</button><button class="btn ghost small" data-action="allowreset" data-id="' + esc(u.id) + '"' + busyAttr() + ">Mot de passe oublié</button></div>") + "</div>").join("") + "</div>";
+      (u.id === me ? "" : '<div class="row"><button class="btn ghost small" data-action="suspend" data-id="' + esc(u.id) + '"' + busyAttr() + ">" + (u.status === "ok" ? "Suspendre" : "Réactiver") + '</button><button class="btn ghost small" data-action="allowreset" data-id="' + esc(u.id) + '"' + busyAttr() + ">Mot de passe oublié</button>" +
+        (u.status === "ok" ? '<button class="btn ghost small" data-action="role" data-id="' + esc(u.id) + '"' + busyAttr() + ">" + (u.role === "admin" ? "Retirer le rôle admin" : "Nommer admin") + "</button>" : "") + "</div>") +
+      (state.roleAsk === u.id ? '<div class="warn">' + (u.role === "admin" ? esc(u.name) + " ne sera plus admin, mais pourra toujours vendre." : esc(u.name) + " pourra valider les inscriptions, bloquer des numéros, voir toutes les demandes et nommer d'autres admins.") +
+        '</div><div class="row"><button class="btn small" data-action="confirmrole" data-id="' + esc(u.id) + '"' + busyAttr() + '>Confirmer</button><button class="btn ghost small" data-action="norole">Annuler</button></div>' : "") + "</div>").join("") + "</div>";
 }
 function vCommandes() {
   const all = newest(state.allOrders);
@@ -539,6 +574,10 @@ const act = {
   mode(v) { state.mode = v; state.detail = null; state.form = null; },
   tab(v) { state.tab[state.mode] = v; state.form = null; state.accepting = null; state.newPoint = null; },
   island(v) { state.island = v; }, cat(v) { state.cat = v; },
+  season(v) {
+    if (v[0] === "@") { const c = v.slice(1); state.cat = state.cat === c ? "Tous" : c; state.q = ""; }
+    else { state.q = state.q.trim().toLowerCase() === v ? "" : v; state.cat = "Tous"; }
+  },
   authtab(v) { state.authTab = v; },
   async locate() { state.pos = await locate(); try { sessionStorage.setItem("maa-pos", JSON.stringify(state.pos)); } catch (e) {} },
   open(v, d) {
@@ -632,6 +671,14 @@ const act = {
   },
   async reject(v, d) { await store.setUserStatus(d.id, "refused"); },
   async suspend(v, d) { const u = state.users.find(x => x.id === d.id); await store.setUserStatus(u.id, u.status === "ok" ? "suspended" : "ok"); },
+  role(v, d) { state.roleAsk = d.id; },
+  norole() { state.roleAsk = null; },
+  async confirmrole(v, d) {
+    const u = state.users.find(x => x.id === d.id), next = u.role === "admin" ? "farmer" : "admin";
+    await store.setUserRole(u.id, next);
+    state.roleAsk = null;
+    toast(next === "admin" ? u.name + " est maintenant admin" : u.name + " n'est plus admin");
+  },
   async allowreset(v, d) {
     const u = state.users.find(x => x.id === d.id);
     await store.allowReset(digits(u.phone));

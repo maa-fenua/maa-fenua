@@ -76,7 +76,7 @@ Puis onglet **Règles** : collez le contenu de `firestore.rules` et publiez. À 
 2. Dans la console Firebase : **Firestore → mf_users →** le document de ce compte. Changez `role` en `admin` et `status` en `ok`.
 3. Rechargez l'application : un bouton **Admin** apparaît en haut.
 
-Conseil : créez **deux admins** (vous et votre ami). Si l'un oublie son mot de passe, l'autre peut le débloquer dans l'application.
+Conseil : créez **deux admins** (vous et votre ami). Si l'un oublie son mot de passe, l'autre peut le débloquer dans l'application. Les admins suivants se nomment directement dans l'application : **Admin → Agriculteurs → Nommer admin**.
 
 ## Mots de passe oubliés
 
