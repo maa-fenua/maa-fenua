@@ -1,4 +1,5 @@
 import { firebaseConfig, APP } from "./config.js";
+import { tr, translateDom, getLang, setLang } from "./i18n.js";
 
 /* ───────── État ───────── */
 const configured = !!(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.projectId);
@@ -64,7 +65,7 @@ function slotLabel(date, time) {
 }
 function toast(msg) {
   const t = $("#toast");
-  t.innerHTML = '<div class="toast">' + esc(msg) + "</div>";
+  t.innerHTML = '<div class="toast">' + esc(tr(msg)) + "</div>";
   clearTimeout(toast.t);
   toast.t = setTimeout(() => { t.innerHTML = ""; }, 3600);
 }
@@ -275,6 +276,8 @@ function render() {
   html += state.mode === "sell" ? sellGate(views[cur]) : views[cur]();
   $("#main").innerHTML = html;
   $("#sheet").innerHTML = state.detail ? vDetail() : state.sent ? vSent() : "";
+  document.querySelectorAll("#langbtn [data-l]").forEach(s => s.classList.toggle("on", s.dataset.l === getLang()));
+  translateDom($("#app"));
   mountMaps();
   if (keep) { const el = document.getElementById(keep.id); if (el) { el.focus(); try { if (keep.s != null) el.setSelectionRange(keep.s, keep.e); } catch (e) {} } }
 }
@@ -571,6 +574,7 @@ function locate() {
 }
 const orderById = id => state.farmOrders.concat(state.allOrders, state.myOrders).find(o => o.id === id);
 const act = {
+  lang() { setLang(getLang() === "tah" ? "fr" : "tah"); toast(getLang() === "tah" ? "Reo tahiti (version à faire relire)" : "Français"); },
   mode(v) { state.mode = v; state.detail = null; state.form = null; },
   tab(v) { state.tab[state.mode] = v; state.form = null; state.accepting = null; state.newPoint = null; },
   island(v) { state.island = v; }, cat(v) { state.cat = v; },
@@ -867,6 +871,7 @@ function intro() {
   if (!el || seenIntro || (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) return;
   el.querySelector(".intro-title").textContent = APP.name;
   el.hidden = false;
+  translateDom(el);
   let gone = false;
   const close = () => { if (gone) return; gone = true; el.classList.add("out"); setTimeout(() => { el.hidden = true; }, 480); };
   el.addEventListener("click", close);

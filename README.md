@@ -95,6 +95,7 @@ Les photos sont réduites dans le téléphone (1000 pixels au plus, JPEG) avant 
 | Fichier | Rôle |
 |---|---|
 | `js/config.js` | **Le seul fichier à modifier** : clés Firebase, nom, îles |
+| `js/i18n.js` | Traduction en reo tahiti (bouton FR / TAH). Première version **à faire relire** : corrigez le texte à droite des « : » |
 | `index.html`, `css/style.css` | Page et apparence |
 | `js/app.js` | Écrans et actions |
 | `js/store-firebase.js` | Lecture et écriture dans Firebase |
