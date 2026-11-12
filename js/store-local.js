@@ -169,6 +169,7 @@ export async function createStore() {
     },
     async acceptOrder(order, slot) {
       const o = db.orders.find(x => x.id === order.id), p = db.products.find(x => x.id === order.productId);
+      if (!o || o.status !== "pending") throw err("order-not-pending");
       if (p) p.stock = Math.max(0, p.stock - o.qty);
       o.status = "accepted"; o.slot = slot;
       emit();

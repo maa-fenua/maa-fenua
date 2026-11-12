@@ -136,7 +136,10 @@ export async function createStore() {
     acceptOrder(order, slot) {
       return FS.runTransaction(db, async t => {
         const pr = D("products", order.productId);
+        const os = await t.get(D("orders", order.id));
         const ps = await t.get(pr);
+        // L'acheteur a pu annuler entre-temps : on n'accepte qu'une demande encore en attente.
+        if (!os.exists() || os.data().status !== "pending") throw Object.assign(new Error("order-not-pending"), { code: "order-not-pending" });
         if (ps.exists()) t.update(pr, { stock: Math.max(0, (ps.data().stock || 0) - order.qty) });
         t.update(D("orders", order.id), { status: "accepted", slot });
         if (order.lockId) t.delete(D("locks", order.lockId));

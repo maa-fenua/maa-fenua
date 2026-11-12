@@ -1,7 +1,7 @@
 // Service worker : rend l'application installable et utilisable avec un réseau faible.
 // Stratégie « réseau d'abord » : on prend toujours la dernière version quand il y a du réseau,
 // sinon la copie gardée en mémoire. Changez le numéro de CACHE pour forcer un nettoyage.
-const CACHE = "maa-fenua-v9";
+const CACHE = "maa-fenua-v10";
 const SHELL = ["./", "index.html", "css/style.css", "js/app.js", "js/config.js", "js/i18n.js", "js/store-local.js", "js/store-firebase.js",
   "vendor/leaflet.js", "vendor/leaflet.css", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "icons/photos/ananas.jpg", "icons/photos/papaye.jpg", "icons/photos/coco.jpg", "icons/photos/patate.jpg", "icons/photos/corossol.jpg", "icons/photos/plant.jpg"];

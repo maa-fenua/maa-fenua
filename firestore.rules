@@ -15,6 +15,7 @@ service cloud.firestore {
     function mfHasProfile() { return signedIn() && exists(mfProfilePath()); }
     function mfIsAdmin() { return mfHasProfile() && get(mfProfilePath()).data.role == 'admin' && get(mfProfilePath()).data.status == 'ok'; }
     function mfIsActive() { return mfHasProfile() && get(mfProfilePath()).data.status == 'ok'; }
+    function shortText(v, max) { return v is string && v.size() > 0 && v.size() <= max; }
 
     // Profils des agriculteurs. Un nouvel inscrit est toujours « farmer » et « pending ».
     match /mf_users/{uid} {
@@ -22,7 +23,9 @@ service cloud.firestore {
       allow create: if signedIn() && request.auth.uid == uid
                     && request.resource.data.role == 'farmer'
                     && request.resource.data.status == 'pending'
-                    && request.resource.data.phone.matches('^[0-9]{8}$');
+                    && request.resource.data.phone.matches('^[0-9]{8}$')
+                    && shortText(request.resource.data.name, 60)
+                    && shortText(request.resource.data.commune, 60);
       allow update: if mfIsAdmin()
                     || (request.auth.uid == uid
                         && request.resource.data.role == resource.data.role
@@ -32,25 +35,34 @@ service cloud.firestore {
 
     // Compteur « mot de passe oublié », géré par l'admin.
     match /mf_resets/{phone} {
-      allow read: if true;
+      // « get » seulement : personne ne peut lister les numéros concernés.
+      allow get: if true;
       allow write: if mfIsAdmin();
     }
 
     // Points de retrait : visibles par tous, modifiables par leur agriculteur.
     match /mf_points/{id} {
       allow read: if true;
-      allow create: if mfIsActive() && request.resource.data.farmerId == request.auth.uid;
-      allow update, delete: if mfIsAdmin() || (mfIsActive() && resource.data.farmerId == request.auth.uid);
+      allow create: if mfIsActive() && request.resource.data.farmerId == request.auth.uid
+                    && request.resource.data.lat is number && request.resource.data.lon is number
+                    && shortText(request.resource.data.name, 60);
+      allow update: if mfIsAdmin();
+      allow delete: if mfIsAdmin() || (mfIsActive() && resource.data.farmerId == request.auth.uid);
     }
 
     // Produits : visibles par tous, modifiables par leur agriculteur (compte validé).
     match /mf_products/{id} {
       allow read: if true;
+      function validProduct(d) {
+        return d.price is number && d.price > 0 && d.stock is number && d.stock >= 0
+            && shortText(d.name, 80) && d.lat is number && d.lon is number;
+      }
       allow create: if mfIsActive() && request.resource.data.farmerId == request.auth.uid
-                    && request.resource.data.price > 0 && request.resource.data.stock >= 0;
+                    && validProduct(request.resource.data);
       allow update: if mfIsAdmin()
                     || (mfIsActive() && resource.data.farmerId == request.auth.uid
-                        && request.resource.data.farmerId == request.auth.uid);
+                        && request.resource.data.farmerId == request.auth.uid
+                        && validProduct(request.resource.data));
       allow delete: if mfIsAdmin() || (mfIsActive() && resource.data.farmerId == request.auth.uid);
 
       match /photos/{n} {
@@ -74,7 +86,11 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.buyerUid == request.auth.uid
                     && request.resource.data.status == 'pending'
-                    && request.resource.data.qty > 0
+                    && request.resource.data.qty is number && request.resource.data.qty > 0
+                    && shortText(request.resource.data.buyerName, 40)
+                    // La demande doit viser un vrai produit, chez le bon agriculteur, au prix affiché.
+                    && get(/databases/$(database)/documents/mf_products/$(request.resource.data.productId)).data.farmerId == request.resource.data.farmerId
+                    && get(/databases/$(database)/documents/mf_products/$(request.resource.data.productId)).data.price == request.resource.data.price
                     && request.resource.data.buyerPhone is string
                     && request.resource.data.buyerPhone.matches('^[0-9]{8}$')
                     && request.resource.data.lockId is string

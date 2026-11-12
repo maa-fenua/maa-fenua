@@ -27,7 +27,10 @@ const UST = { pending: "À valider", ok: "Actif", suspended: "Suspendu", refused
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const money = n => Math.round(n).toLocaleString("fr-FR").replace(/[  ]/g, " ") + " F";
-const qtyLabel = (q, u) => (Number.isInteger(q) ? q : q.toLocaleString("fr-FR")) + " " + (UNITS[u] || UNITS.piece)[q > 1 ? 1 : 0];
+// Number(...) : une quantité trafiquée (texte au lieu d'un nombre) ne peut pas injecter de code.
+const qtyLabel = (q, u) => { q = Number(q) || 0; return (Number.isInteger(q) ? q : q.toLocaleString("fr-FR")) + " " + (UNITS[u] || UNITS.piece)[q > 1 ? 1 : 0]; };
+// Date locale AAAA-MM-JJ (toISOString donnerait la date UTC, en avance d'un jour l'après-midi à Tahiti).
+const localDate = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 const unitName = u => (UNITS[u] || UNITS.piece)[0];
 const step = u => u === "kg" ? 0.5 : 1;
 const ts = x => x == null ? Infinity : typeof x === "number" ? x : (x.seconds || 0) * 1000;
@@ -38,7 +41,7 @@ const validPhone = s => /^\d{8}$/.test(digits(s));
 const PHONE_MSG = "Le numéro doit avoir 8 chiffres, par exemple 87 12 34 56.";
 const waLink = (phone, msg) => "https://wa.me/689" + digits(phone) + "?text=" + encodeURIComponent(msg);
 const smsLink = (phone, msg) => "sms:+689" + digits(phone) + "?body=" + encodeURIComponent(msg);
-const totalOf = o => o.total != null ? o.total : o.qty * o.price;
+const totalOf = o => (Number(o.qty) || 0) * (Number(o.price) || 0);
 const prettyPhone = s => { const d = digits(s); return d.length === 8 ? d.replace(/(\d\d)(?=\d)/g, "$1 ") : String(s || ""); };
 const profile = () => state.session && state.session.profile;
 const isFarmerOk = () => !!(profile() && profile().status === "ok");
@@ -57,7 +60,9 @@ function distLabel(pt) {
   return "à " + (d < 10 ? d.toFixed(1).replace(".", ",") : Math.round(d)) + " km";
 }
 const islandOf = lat => lat > -16.70 ? APP.islands[0] : (APP.islands[1] || APP.islands[0]);
-const mapsLink = o => "https://www.google.com/maps/dir/?api=1&destination=" + o.lat + "," + o.lon;
+// Sécurité : une donnée modifiée hors de l'application ne doit jamais pouvoir injecter du code dans la page.
+const mapsLink = o => { const a = Number(o.lat), b = Number(o.lon); return isFinite(a) && isFinite(b) ? "https://www.google.com/maps/dir/?api=1&destination=" + a + "," + b : "#"; };
+const safeImg = u => typeof u === "string" && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(u) ? u : "";
 function slotLabel(date, time) {
   const d = new Date(date + "T" + (time || "07:00"));
   if (isNaN(d)) return "";
@@ -84,6 +89,7 @@ function fail(e) {
     "auth/operation-not-allowed": "Cette méthode de connexion n'est pas activée dans la console Firebase.",
     "auth/admin-restricted-operation": "La connexion anonyme n'est pas activée dans la console Firebase.",
     "permission-denied": "Action non autorisée pour ce compte.",
+    "order-not-pending": "Cette demande n'est plus en attente. L'acheteur l'a peut-être annulée.",
     "unavailable": "Pas de connexion. Réessayez quand le réseau revient."
   };
   toast(M[c] || (e && e.userMessage) || "Une erreur est survenue" + (c ? " (" + c + ")" : "") + ". Réessayez.");
@@ -103,7 +109,8 @@ function kindOf(name) {
 }
 let p_cat = "";
 function art(p, src) {
-  if (src || p.thumb) return '<img alt="" loading="lazy" src="' + (src || p.thumb) + '">';
+  const img = safeImg(src || p.thumb);
+  if (img) return '<img alt="" loading="lazy" src="' + img + '">';
   p_cat = p.cat || "";
   const kind = kindOf(p.name || p.productName);
   const bg = { ananas: "#fbe9b0", pasteque: "#d8efd0", banane: "#e3f1c9", taro: "#e6ddd0", vanille: "#f1e3c6", citron: "#e2f3c2", tomate: "#fbdcd2", papaye: "#fde3c0", concombre: "#d6efd9", uru: "#dcefc4", pota: "#d9f0d6", gingembre: "#f3e6cc", plante: "#e4f1df", coco: "#e9dfd0", corossol: "#e2efd2", patate: "#f3e1d8", pitaya: "#fbdfe9", ramboutan: "#fbdcd2", passion: "#f0dfea", avocat: "#e2efd2", agrume: "#fdeec0", autre: "#d9f0ec" }[kind];
@@ -196,7 +203,7 @@ function makeMap(id, o) {
   const map = L.map(el, { zoomControl: !fixed, dragging: !fixed, scrollWheelZoom: false, doubleClickZoom: !fixed, touchZoom: !fixed, boxZoom: false, keyboard: !fixed, attributionControl: true });
   maps[id] = map;
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
-  const pins = (o.pins || []).filter(p => p.lat != null && p.lon != null);
+  const pins = (o.pins || []).filter(p => typeof p.lat === "number" && typeof p.lon === "number" && isFinite(p.lat) && isFinite(p.lon));
   pins.forEach(p => {
     const m = L.marker([p.lat, p.lon], { icon: pinIcon(p.label, p.sel), title: p.name || "", keyboard: !!p.onClick }).addTo(map);
     if (p.onClick) m.on("click", p.onClick);
@@ -220,7 +227,7 @@ function mountMaps() {
   } else makeMap("map-all", {});
   if (state.detail) {
     const p = allProducts().get(state.detail);
-    if (p) makeMap("map-detail", { fixed: true, here: true, center: [p.lat, p.lon], zoom: 13, pins: [{ lat: p.lat, lon: p.lon, name: p.pointName }] });
+    if (p && isFinite(Number(p.lat)) && isFinite(Number(p.lon))) makeMap("map-detail", { fixed: true, here: true, center: [Number(p.lat), Number(p.lon)], zoom: 13, pins: [{ lat: p.lat, lon: p.lon, name: p.pointName }] });
   } else makeMap("map-detail", {});
   if (state.mode === "sell" && cur === "points" && isFarmerOk()) {
     makeMap("map-pick", { pins: myPoints(), temp: state.newPoint, onClick: ll => { setNewPoint(ll.lat, ll.lng); render(); } });
@@ -315,7 +322,7 @@ function vDetail() {
   const q = state.qty, ph = state.photos && state.photos.id === p.id ? state.photos.list : [], d = distLabel(p);
   return '<div class="sheet"><div class="top"><button data-action="close">Retour</button><strong>' + esc(p.name) + '</strong></div><div class="body">' +
     '<div class="pic hero-pic">' + art(p, ph[state.photo]) + '</div><div class="pad">' +
-    (ph.length > 1 ? '<div class="row">' + ph.map((u, i) => '<button class="thumb pic" data-action="photo" data-v="' + i + '" aria-pressed="' + (i === state.photo) + '" aria-label="Photo ' + (i + 1) + '"><img alt="" src="' + u + '"></button>').join("") + "</div>" : "") +
+    (ph.length > 1 ? '<div class="row">' + ph.map((u, i) => '<button class="thumb pic" data-action="photo" data-v="' + i + '" aria-pressed="' + (i === state.photo) + '" aria-label="Photo ' + (i + 1) + '"><img alt="" src="' + safeImg(u) + '"></button>').join("") + "</div>" : "") +
     '<div class="row between"><div><h2>' + esc(p.name) + '</h2><p class="muted">' + (p.detail ? esc(p.detail) + " · " : "") + "Vendu par " + esc(p.farmerName) + (p.commune ? ", " + esc(p.commune) : "") + '</p></div><div class="price">' + money(p.price) + " <small>/ " + unitName(p.unit) + "</small></div></div>" +
     '<p class="muted">' + (p.stock > 0 ? "Disponible : " + qtyLabel(p.stock, p.unit) : "Épuisé pour le moment") + "</p>" +
     (p.stock > 0 ?
@@ -386,7 +393,7 @@ function orderItem(o, who) {
   if (who === "farmer") {
     if (o.status === "pending") {
       if (state.accepting === o.id) {
-        h += '<div class="grid2"><label class="field">Jour du retrait<input id="slot-date" type="date" min="' + new Date().toISOString().slice(0, 10) + '" value="' + esc(state.slot.date) + '" data-keep="slot.date"></label>' +
+        h += '<div class="grid2"><label class="field">Jour du retrait<input id="slot-date" type="date" min="' + localDate(new Date()) + '" value="' + esc(state.slot.date) + '" data-keep="slot.date"></label>' +
           '<label class="field">Heure<input id="slot-time" type="time" value="' + esc(state.slot.time) + '" data-keep="slot.time"></label></div>' +
           '<div class="row"><button class="btn small" data-action="confirm" data-id="' + esc(o.id) + '"' + busyAttr() + '>Confirmer le retrait</button><button class="btn ghost small" data-action="unaccept">Annuler</button></div>';
       } else if (needsCheck(o)) {
@@ -537,7 +544,7 @@ function vPoints() {
 function vResume() {
   const fs = state.users.filter(u => u.role !== "admin" || u.status), ok = fs.filter(u => u.status === "ok").length, wait = fs.filter(u => u.status === "pending").length;
   const pend = state.allOrders.filter(o => o.status === "pending").length;
-  const sold = state.allOrders.filter(o => o.status === "done").reduce((s, o) => s + (o.total != null ? o.total : o.qty * o.price), 0);
+  const sold = state.allOrders.filter(o => o.status === "done").reduce((s, o) => s + totalOf(o), 0);
   return "<h2>Tableau de bord</h2>" + alertCard("nouvelle inscription") + '<div class="tiles"><div class="tile' + (wait ? " alert" : "") + '"><b>' + wait + '</b><span>inscriptions à valider</span></div><div class="tile' + (pend ? " alert" : "") + '"><b>' + pend + '</b><span>demandes en attente</span></div><div class="tile"><b>' + ok + '</b><span>comptes actifs</span></div><div class="tile"><b>' + state.catalogue.length + "</b><span>produits en vente</span></div></div>" +
     '<div class="card"><h3>Ventes remises et payées</h3><div class="total" style="border:0;padding:0"><span class="muted">Total des demandes terminées</span><strong>' + money(sold) + "</strong></div></div>" +
     '<div class="card"><h3>Produits par île</h3>' + APP.islands.map(i => '<div class="row between"><span>' + esc(i) + "</span><strong>" + state.catalogue.filter(p => p.island === i).length + "</strong></div>").join("") + "</div>" +
@@ -587,7 +594,7 @@ const act = {
   open(v, d) {
     state.detail = d.id; state.qty = 1; state.photo = 0; state.photos = null;
     const p = allProducts().get(d.id);
-    if (p && p.photoCount > 0) store.getPhotos(p.id).then(list => { if (state.detail === p.id && list.length) { state.photos = { id: p.id, list }; render(); } }).catch(e => console.error(e));
+    if (p && p.photoCount > 0) store.getPhotos(p.id).then(list => { list = list.filter(safeImg); if (state.detail === p.id && list.length) { state.photos = { id: p.id, list }; render(); } }).catch(e => console.error(e));
   },
   photo(v) { state.photo = +v; },
   close() { state.detail = null; },
@@ -604,7 +611,7 @@ const act = {
       pointName: p.pointName, lat: p.lat, lon: p.lon, island: p.island, buyerUid: uid, buyerName: nm, buyerPhone: digits(tel) };
     const used = pend.map(o => +String(o.lockId || "").split("_").pop()).filter(Boolean);
     const sending = store.createOrder(data, used).catch(e => {
-      if (e && e.code === "permission-denied") throw userError("La demande n'a pas pu être envoyée. Vous avez peut-être déjà 3 demandes en attente, ou ce numéro a été bloqué. Vous pouvez appeler l'agriculteur directement.");
+      if (e && e.code === "permission-denied") throw userError("La demande n'a pas pu être envoyée. Vous avez peut-être déjà 3 demandes en attente, le prix a changé (rechargez la page), ou ce numéro a été bloqué. Vous pouvez appeler l'agriculteur directement.");
       throw e;
     });
     // Sans réseau, Firestore garde la demande et l'enverra plus tard : on n'attend pas la réponse du serveur.
@@ -646,7 +653,7 @@ const act = {
   rmphoto(v) { state.form.photos.splice(+v, 1); },
   async stock(v, d) { const p = state.myProducts.find(x => x.id === d.id), s = Math.max(0, p.stock + step(p.unit) * (d.d === "1" ? 1 : -1)); p.stock = s; await store.updateProduct(p.id, { stock: s }); },
   async del(v, d) { const p = state.myProducts.find(x => x.id === d.id); await store.deleteProduct(p.id, p.photoCount); toast(p.name + " est retiré de la vente"); },
-  accept(v, d) { state.accepting = d.id; const t = new Date(); t.setDate(t.getDate() + 1); state.slot = { date: t.toISOString().slice(0, 10), time: "07:00" }; },
+  accept(v, d) { state.accepting = d.id; const t = new Date(); t.setDate(t.getDate() + 1); state.slot = { date: localDate(t), time: "07:00" }; },
   unaccept() { state.accepting = null; },
   async verify(v, d) {
     const o = orderById(d.id), ph = digits(o.buyerPhone);
