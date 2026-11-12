@@ -10,12 +10,12 @@
 // La protection des données vient des règles Firestore (fichier firestore.rules).
 
 export const firebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyDX4cRUvNJ0pvzLtUISSy8LOKjzXHPI5Bg",
+  authDomain: "maa-fenua.firebaseapp.com",
+  projectId: "maa-fenua",
+  storageBucket: "maa-fenua.firebasestorage.app",
+  messagingSenderId: "13900688671",
+  appId: "1:13900688671:web:52d8115fe7e5ba6cf1d42a"
 };
 
 export const APP = {
